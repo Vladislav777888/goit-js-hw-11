@@ -15,6 +15,7 @@ refs.btnLoad.addEventListener('click', onbtnLoad);
 refs.btnLoad.style.display = 'none';
 
 let page = 1;
+let alreadyShown = 0;
 
 function onSubmit(evt) {
   evt.preventDefault();
@@ -24,7 +25,14 @@ function onSubmit(evt) {
   page = 1;
   refs.btnLoad.style.display = 'none';
 
-  fetchImages(searchValue);
+  if (searchValue !== '') {
+    fetchImages(searchValue);
+  } else {
+    refs.btnLoad.style.display = 'none';
+    Notiflix.Notify.failure(
+      'Sorry, there are no images matching your search query. Please try again.'
+    );
+  }
 }
 
 async function fetchImages(value, page) {
@@ -43,11 +51,12 @@ async function fetchImages(value, page) {
 
   try {
     const response = await axios.get(BASE_URL, options);
+    alreadyShown += response.data.hits.length;
 
     const arrLength = response.data.hits.length;
     const maxLength = response.data.total;
 
-    showMessage(arrLength, maxLength);
+    showMessage(arrLength, maxLength, alreadyShown);
     renderListImages(response.data);
   } catch (error) {
     console.log(error);
@@ -91,14 +100,16 @@ function renderListImages(arr) {
 }
 
 function onbtnLoad() {
+  refs.btnLoad.style.display = 'none';
   page += 1;
   const searchValue = refs.form.elements.searchQuery.value.trim();
 
   fetchImages(searchValue, page);
+  // refs.btnLoad.style.display = 'block';
 }
 
-function showMessage(length, total) {
-  if (length === 0) {
+function showMessage(length, total, alreadyShown) {
+  if (!length) {
     refs.btnLoad.style.display = 'none';
     Notiflix.Notify.failure(
       'Sorry, there are no images matching your search query. Please try again.'
@@ -111,7 +122,7 @@ function showMessage(length, total) {
     return;
   }
 
-  if (length > total) {
+  if (alreadyShown >= total) {
     refs.btnLoad.style.display = 'none';
     Notiflix.Notify.info(
       "We're sorry, but you've reached the end of search results."
